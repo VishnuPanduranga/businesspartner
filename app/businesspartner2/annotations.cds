@@ -29,6 +29,11 @@ annotate service.BusinessPartners with @(
         },
         {
             $Type: 'UI.DataField',
+            Label: 'Industry',
+            Value: Industry
+        },
+        {
+            $Type: 'UI.DataField',
             Label: 'Business Partner Category',
             Value: BusinessPartnerCategory
         },
@@ -40,7 +45,7 @@ annotate service.BusinessPartners with @(
 
         {
             $Type: 'UI.DataField',
-            Label: 'Business Partner Type',
+            Label: 'Nationality',
             Value: BusPartNationality
         }
     ]
