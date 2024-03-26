@@ -14,7 +14,7 @@ annotate service.BusinessPartners with @(
     UI.LineItem       : [
         {
             $Type: 'UI.DataField',
-            Label: 'Business Partner',
+            Label: 'Business Partner v1',
             Value: BusinessPartner
         },
         {
