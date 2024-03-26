@@ -1,0 +1,142 @@
+_schema-version: "3.1"
+ID: businessPartnersExtensions
+description: A simple CAP project.
+version: 1.0.0
+modules:
+- name: businessPartnersExtensions-srv
+  type: nodejs
+  path: gen/srv
+  requires:
+  - name: businessPartnersExtensions-destination
+  - name: uaa_businessPartnersExtensions
+  provides:
+  - name: srv-api
+    properties:
+      srv-url: ${default-url}
+  parameters:
+    buildpack: nodejs_buildpack
+  build-parameters:
+    builder: npm
+- name: businessPartnersExtensions-app-content
+  type: com.sap.application.content
+  path: .
+  requires:
+  - name: businessPartnersExtensions-repo-host
+    parameters:
+      content-target: true
+  build-parameters:
+    build-result: resources
+    requires:
+    - artifacts:
+      - comsonybusinesspartnerui.zip
+      name: comsonybusinesspartnerui
+      target-path: resources/
+    - artifacts:
+      - sonybusinesspartner2.zip
+      name: sonybusinesspartner2
+      target-path: resources/
+- name: comsonybusinesspartnerui
+  type: html5
+  path: app/business_partner_ui
+  build-parameters:
+    build-result: dist
+    builder: custom
+    commands:
+    - npm install
+    - npm run build:cf
+    supported-platforms: []
+- name: businessPartnersExtensions-destination-content
+  type: com.sap.application.content
+  requires:
+  - name: businessPartnersExtensions-destination
+    parameters:
+      content-target: true
+  - name: businessPartnersExtensions-repo-host
+    parameters:
+      service-key:
+        name: businessPartnersExtensions-repo-host-key
+  - name: uaa_businessPartnersExtensions
+    parameters:
+      service-key:
+        name: uaa_businessPartnersExtensions-key
+  parameters:
+    content:
+      instance:
+        destinations:
+        - Name: approuter_businessPartnersExtensions_repo_host
+          ServiceInstanceName: businessPartnersExtensions-html5-srv
+          ServiceKeyName: businessPartnersExtensions-repo-host-key
+          sap.cloud.service: approuter
+        - Authentication: OAuth2UserTokenExchange
+          Name: approuter_uaa_businessPartnersExtensions
+          ServiceInstanceName: businessPartnersExtensions-xsuaa-service
+          ServiceKeyName: uaa_businessPartnersExtensions-key
+          sap.cloud.service: approuter
+        existing_destinations_policy: ignore
+  build-parameters:
+    no-source: true
+- name: sonybusinesspartner2
+  type: html5
+  path: app/businesspartner2
+  build-parameters:
+    build-result: dist
+    builder: custom
+    commands:
+    - npm install
+    - npm run build:cf
+    supported-platforms: []
+resources:
+- name: businessPartnersExtensions-destination
+  type: org.cloudfoundry.managed-service
+  parameters:
+    config:
+      HTML5Runtime_enabled: true
+      init_data:
+        instance:
+          destinations:
+          - Authentication: NoAuthentication
+            Name: ui5
+            ProxyType: Internet
+            Type: HTTP
+            URL: https://ui5.sap.com
+          - Authentication: NoAuthentication
+            HTML5.DynamicDestination: true
+            HTML5.ForwardAuthToken: true
+            Name: businessPartnersExtensions
+            ProxyType: Internet
+            Type: HTTP
+            URL: ~{srv-api/srv-url}
+          - Authentication: NoAuthentication
+            HTML5.DynamicDestination: true
+            HTML5.ForwardAuthToken: true
+            Name: businessPartnersExtensions-srv-api
+            ProxyType: Internet
+            Type: HTTP
+            URL: ~{srv-api/srv-url}
+          existing_destinations_policy: update
+    service: destination
+    service-plan: lite
+  requires:
+  - name: srv-api
+- name: businessPartnersExtensions-repo-host
+  type: org.cloudfoundry.managed-service
+  parameters:
+    service: html5-apps-repo
+    service-name: businessPartnersExtensions-html5-srv
+    service-plan: app-host
+- name: uaa_businessPartnersExtensions
+  type: org.cloudfoundry.managed-service
+  parameters:
+    path: ./xs-security.json
+    service: xsuaa
+    service-name: businessPartnersExtensions-xsuaa-service
+    service-plan: application
+parameters:
+  deploy_mode: html5-repo
+  enable-parallel-deployments: true
+build-parameters:
+  before-all:
+  - builder: custom
+    commands:
+    - npm ci
+    - npx cds build --production
